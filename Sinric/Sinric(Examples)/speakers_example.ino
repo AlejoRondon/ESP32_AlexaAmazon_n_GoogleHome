@@ -1,32 +1,20 @@
 #include <Arduino.h>
-#ifdef ESP8266 
-       #include <ESP8266WiFi.h>
-       #include <ESP8266WiFiMulti.h>
-#endif 
-#ifdef ESP32   
-       #include <WiFi.h>
-       #include <WiFiMulti.h>
-#endif
-
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 #include <StreamString.h>
 
-#define API_KEY "a7256f1b-797c-46a0-8641-bc1eea905e88" // TODO: Change to your sinric API Key. Your API Key is displayed on sinric.com dashboard
-#define SSID_NAME "Familia Rondon" // TODO: Change to your Wifi network SSID
-#define WIFI_PASSWORD "emilia1964" // TODO: Change to your Wifi network password
+#define API_KEY "" // TODO: Change to your sinric API Key. Your API Key is displayed on sinric.com dashboard
+#define SSID_NAME "" // TODO: Change to your Wifi network SSID
+#define WIFI_PASSWORD "" // TODO: Change to your Wifi network password
 #define SERVER_URL "iot.sinric.com"
 #define SERVER_PORT 80 
 
+
 #define HEARTBEAT_INTERVAL 300000 // 5 Minutes 
 
-#ifdef ESP8266 
-       ESP8266WiFiMulti wiFiMulti;
-#endif 
-#ifdef ESP32   
-       WiFiMulti wiFiMulti;
-#endif
-
+ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 WiFiClient client;
 
@@ -40,17 +28,17 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 void setup() {
   Serial.begin(115200);
   
-  wiFiMulti.addAP(SSID_NAME, WIFI_PASSWORD);
+  WiFiMulti.addAP(SSID_NAME, WIFI_PASSWORD);
   Serial.println();
   Serial.print("Connecting to Wifi: ");
   Serial.println(SSID_NAME);  
 
   // Waiting for Wifi connect
-  while(wiFiMulti.run() != WL_CONNECTED) {
+  while(WiFiMulti.run() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  if(wiFiMulti.run() == WL_CONNECTED) {
+  if(WiFiMulti.run() == WL_CONNECTED) {
     Serial.println("");
     Serial.print("WiFi connected. ");
     Serial.print("IP address: ");
@@ -80,10 +68,10 @@ void loop() {
           webSocket.sendTXT("H");          
       }
   }   
-}
-  
+} 
+
 void turnOn(String deviceId) {
-  if (deviceId == "5f197fa9ad7a48327f37649e") // Device ID of first device
+  if (deviceId == "5axxxxxxxxxxxxxxxxxxx") // Device ID of first device
   {  
     Serial.print("Turn on device id: ");
     Serial.println(deviceId);
@@ -91,7 +79,7 @@ void turnOn(String deviceId) {
 }
 
 void turnOff(String deviceId) {
-   if (deviceId == "5f197fa9ad7a48327f37649e") // Device ID of first device
+   if (deviceId == "5axxxxxxxxxxxxxxxxxxx") // Device ID of first device
    {  
      Serial.print("Turn off Device ID: ");
      Serial.println(deviceId);
@@ -124,7 +112,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
         String action = json ["action"];
         
         if(action == "setPowerState") {
-            // alexa, turn on tv ==> {"deviceId":"xx","action":"setPowerState","value":"ON"}
+            // alexa, turn on speakers ==> {"deviceId":"xx","action":"setPowerState","value":"ON"}
             String value = json ["value"];
             if(value == "ON") {
                 turnOn(deviceId);
@@ -132,33 +120,39 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
                 turnOff(deviceId);
             }        
         }
-        else if(action == "AdjustBrightness") {
-            // alexa, dim lights  ==>{"deviceId":"xxx","action":"AdjustBrightness","value":-25}
-        }       
-        else if(action == "AdjustBrightness") {
-            // alexa, dim lights  ==>{"deviceId":"xx","action":"AdjustBrightness","value":-25}
+        else if(action == "Pause") {
+            // alexa, pause speakers ==> {"deviceId":"xx","action":"Pause","value":{}}
+            
         }
-        else if(action == "SetBrightness") {
-           //alexa, set the lights to 50% ==> {"deviceId":"xx","action":"SetBrightness","value":50}
+        else if(action == "Play") {
+            // alexa, pause speakers ==> {"deviceId":"xx","action":"Play","value":{}}
+
+        } 
+        else if(action == "Stop") {
+            // alexa, pause speakers ==> {"deviceId":"xxx","action":"Stop","value":{}}
         }
-        else if(action == "SetColor") {
-           //alexa, set the lights to red ==> {"deviceId":"xx","action":"SetColor","value":{"hue":0,"saturation":1,"brightness":1}}
+        else if(action == "SetVolume") {
+            // alexa, set the volume of speakers to 50 ==> {"deviceId":"xxx","action":"SetVolume","value":{"volume":50}}
         }
-        else if(action == "IncreaseColorTemperature") {
-           //alexa, set the lights softer ==> {"deviceId":"xxx","action":"IncreaseColorTemperature"}
+        else if(action == "SetVolume") {
+            // alexa, set the volume of speakers to 50 ==> {"deviceId":"xxx","action":"SetVolume","value":{"volume":50}}
         }
-        else if(action == "IncreaseColorTemperature") {
-           //alexa, set the lights softer ==> {"deviceId":"xxx","action":"IncreaseColorTemperature"}
+        else if(action == "AdjustVolume") {
+            // alexa, turn the volume down on speakers by 20 ==> {"deviceId":"xxx","action":"AdjustVolume","value":{"volume":-20,"volumeDefault":false}}
+            // alexa, lower the volume on speakers ==> {"deviceId":"xxx","action":"AdjustVolume","value":{"volume":-10,"volumeDefault":true}}
         }
-        else if(action == "SetColorTemperature") {
-           //alexa, set the lights softer ==> {"deviceId":"xxx","action":"SetColorTemperature","value":2200}
+        else if(action == "SetMute") {
+            // alexa, mute speakers ==> {"deviceId":"xx","action":"SetMute","value":{"mute":true}}
+        }
+        else if(action == "ChangeChannel") {
+            // alexa, change channel to 200 on speakers ==> {"deviceId":"xx","action":"ChangeChannel","value":{"channel":{},"channelMetadata":{"name":"CH9-200"}}}
         }
       }
       break;
     case WStype_BIN:
       Serial.printf("[webSocketEvent] get binary length: %u\n", length);
       break;
-    default: break;
+    default: break;  
   }
 }
 
@@ -189,3 +183,4 @@ void setPowerStateOnServer(String deviceId, String value) {
   
   webSocket.sendTXT(databuf);
 }
+ 

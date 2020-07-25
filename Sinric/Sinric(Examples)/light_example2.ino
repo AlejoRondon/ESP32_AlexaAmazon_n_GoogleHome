@@ -1,32 +1,19 @@
 #include <Arduino.h>
-#ifdef ESP8266 
-       #include <ESP8266WiFi.h>
-       #include <ESP8266WiFiMulti.h>
-#endif 
-#ifdef ESP32   
-       #include <WiFi.h>
-       #include <WiFiMulti.h>
-#endif
-
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 #include <StreamString.h>
 
-#define API_KEY "a7256f1b-797c-46a0-8641-bc1eea905e88" // TODO: Change to your sinric API Key. Your API Key is displayed on sinric.com dashboard
-#define SSID_NAME "Familia Rondon" // TODO: Change to your Wifi network SSID
-#define WIFI_PASSWORD "emilia1964" // TODO: Change to your Wifi network password
+#define API_KEY "" // TODO: Change to your sinric API Key. Your API Key is displayed on sinric.com dashboard
+#define SSID_NAME "" // TODO: Change to your Wifi network SSID
+#define WIFI_PASSWORD "" // TODO: Change to your Wifi network password
 #define SERVER_URL "iot.sinric.com"
 #define SERVER_PORT 80 
 
 #define HEARTBEAT_INTERVAL 300000 // 5 Minutes 
 
-#ifdef ESP8266 
-       ESP8266WiFiMulti wiFiMulti;
-#endif 
-#ifdef ESP32   
-       WiFiMulti wiFiMulti;
-#endif
-
+ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 WiFiClient client;
 
@@ -40,17 +27,17 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 void setup() {
   Serial.begin(115200);
   
-  wiFiMulti.addAP(SSID_NAME, WIFI_PASSWORD);
+  WiFiMulti.addAP(SSID_NAME, WIFI_PASSWORD);
   Serial.println();
   Serial.print("Connecting to Wifi: ");
   Serial.println(SSID_NAME);  
 
   // Waiting for Wifi connect
-  while(wiFiMulti.run() != WL_CONNECTED) {
+  while(WiFiMulti.run() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  if(wiFiMulti.run() == WL_CONNECTED) {
+  if(WiFiMulti.run() == WL_CONNECTED) {
     Serial.println("");
     Serial.print("WiFi connected. ");
     Serial.print("IP address: ");
@@ -83,7 +70,7 @@ void loop() {
 }
   
 void turnOn(String deviceId) {
-  if (deviceId == "5f197fa9ad7a48327f37649e") // Device ID of first device
+  if (deviceId == "5axxxxxxxxxxxxxxxxxxx") // Device ID of first device
   {  
     Serial.print("Turn on device id: ");
     Serial.println(deviceId);
@@ -91,7 +78,7 @@ void turnOn(String deviceId) {
 }
 
 void turnOff(String deviceId) {
-   if (deviceId == "5f197fa9ad7a48327f37649e") // Device ID of first device
+   if (deviceId == "5axxxxxxxxxxxxxxxxxxx") // Device ID of first device
    {  
      Serial.print("Turn off Device ID: ");
      Serial.println(deviceId);
@@ -189,3 +176,4 @@ void setPowerStateOnServer(String deviceId, String value) {
   
   webSocket.sendTXT(databuf);
 }
+ 

@@ -1,56 +1,43 @@
 #include <Arduino.h>
-#ifdef ESP8266 
-       #include <ESP8266WiFi.h>
-       #include <ESP8266WiFiMulti.h>
-#endif 
-#ifdef ESP32   
-       #include <WiFi.h>
-       #include <WiFiMulti.h>
-#endif
-
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 #include <StreamString.h>
 
-#define API_KEY "a7256f1b-797c-46a0-8641-bc1eea905e88" // TODO: Change to your sinric API Key. Your API Key is displayed on sinric.com dashboard
-#define SSID_NAME "Familia Rondon" // TODO: Change to your Wifi network SSID
-#define WIFI_PASSWORD "emilia1964" // TODO: Change to your Wifi network password
+#define API_KEY "" // TODO: Change to your sinric API Key. Your API Key is displayed on sinric.com dashboard
+#define SSID_NAME "" // TODO: Change to your Wifi network SSID
+#define WIFI_PASSWORD "" // TODO: Change to your Wifi network password
 #define SERVER_URL "iot.sinric.com"
-#define SERVER_PORT 80 
+#define SERVER_PORT 80
 
 #define HEARTBEAT_INTERVAL 300000 // 5 Minutes 
 
-#ifdef ESP8266 
-       ESP8266WiFiMulti wiFiMulti;
-#endif 
-#ifdef ESP32   
-       WiFiMulti wiFiMulti;
-#endif
-
+ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 WiFiClient client;
 
 uint64_t heartbeatTimestamp = 0;
 bool isConnected = false;
 
-void setPowerStateOnServer(String deviceId, String value);
-void setTargetTemperatureOnServer(String deviceId, String value, String scale);
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
+void setPowerStateOnServer(String deviceId, String value);
+
 
 void setup() {
   Serial.begin(115200);
   
-  wiFiMulti.addAP(SSID_NAME, WIFI_PASSWORD);
+  WiFiMulti.addAP(SSID_NAME, WIFI_PASSWORD);
   Serial.println();
   Serial.print("Connecting to Wifi: ");
   Serial.println(SSID_NAME);  
 
   // Waiting for Wifi connect
-  while(wiFiMulti.run() != WL_CONNECTED) {
+  while(WiFiMulti.run() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  if(wiFiMulti.run() == WL_CONNECTED) {
+  if(WiFiMulti.run() == WL_CONNECTED) {
     Serial.println("");
     Serial.print("WiFi connected. ");
     Serial.print("IP address: ");
@@ -81,9 +68,22 @@ void loop() {
       }
   }   
 }
-  
+
+// deviceId is the ID assgined to your smart-home-device in sinric.com dashboard. Copy it from dashboard and paste it here
+ 
+
+void adjustVolume(int adjustVolume) {
+   Serial.print("adjustVolume: ");
+   Serial.println(adjustVolume);    
+}
+
+void setMute(bool mute) {
+   Serial.print("mute: ");
+   Serial.println(mute);    
+}
+
 void turnOn(String deviceId) {
-  if (deviceId == "5f197fa9ad7a48327f37649e") // Device ID of first device
+  if (deviceId == "5axxxxxxxxxxxxxxxxxxx") // Device ID of first device
   {  
     Serial.print("Turn on device id: ");
     Serial.println(deviceId);
@@ -91,7 +91,7 @@ void turnOn(String deviceId) {
 }
 
 void turnOff(String deviceId) {
-   if (deviceId == "5f197fa9ad7a48327f37649e") // Device ID of first device
+   if (deviceId == "5axxxxxxxxxxxxxxxxxxx") // Device ID of first device
    {  
      Serial.print("Turn off Device ID: ");
      Serial.println(deviceId);
@@ -130,28 +130,36 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
                 turnOn(deviceId);
             } else {
                 turnOff(deviceId);
-            }        
+            }
+        } else if(action == "SetMute") { 
+            // alexa, mute tv ==> {"deviceId":"xxx","action":"SetMute","value":{"mute":true}}
+            bool mute = json ["value"]["mute"];
+            setMute(mute);
+        } else if(action == "AdjustVolume") { 
+            // alexa, turn the volume down on tv by 20 ==> {"deviceId":"xxx","action":"AdjustVolume","value":{"volume":-20,"volumeDefault":false}}
+            // alexa, lower the volume on tv ==> {"deviceId":"xx","action":"AdjustVolume","value":{"volume":-10,"volumeDefault":true}}
+            const char* kcvolume = json ["value"]["volume"];
+            int volume = atoi(kcvolume);  
+            adjustVolume(volume);
         }
-        else if(action == "AdjustBrightness") {
-            // alexa, dim lights  ==>{"deviceId":"xxx","action":"AdjustBrightness","value":-25}
-        }       
-        else if(action == "AdjustBrightness") {
-            // alexa, dim lights  ==>{"deviceId":"xx","action":"AdjustBrightness","value":-25}
+        else if(action == "ChangeChannel") { 
+          //alexa, change channel to 200 on tv ==> {"deviceId":"xx","action":"ChangeChannel","value":{"channel":{},"channelMetadata":{"name":"CH9-200"}}}
+          //alexa, change channel to pbs on tv ==> {"deviceId":"xx","action":"ChangeChannel","value":{"channel":{},"channelMetadata":{"name":"pbs"}}}
+          String value = json ["value"]["channelMetadata"]["name"];
+          
         }
-        else if(action == "SetBrightness") {
-           //alexa, set the lights to 50% ==> {"deviceId":"xx","action":"SetBrightness","value":50}
+        else if(action == "SkipChannels") { 
+          //Alexa, next channel on tv ==>  {"deviceId":"xx","action":"SkipChannels","value":{"channelCount":1}}
+          // Alexa may say Sorry, TV is not responding. but command works          
         }
-        else if(action == "SetColor") {
-           //alexa, set the lights to red ==> {"deviceId":"xx","action":"SetColor","value":{"hue":0,"saturation":1,"brightness":1}}
+        else if(action == "Previous" || action == "Play") { 
+          // alexa, previous on tv ==> {"deviceId":"xx","action":"Previous","value":{}}
+          // alexa, resume tv ==> {"deviceId":"xx","action":"Play","value":{}}
+          // Alexa, pause tv ==> says I dont know that one...
+          // for others check https://developer.amazon.com/docs/device-apis/alexa-playbackcontroller.html
         }
-        else if(action == "IncreaseColorTemperature") {
-           //alexa, set the lights softer ==> {"deviceId":"xxx","action":"IncreaseColorTemperature"}
-        }
-        else if(action == "IncreaseColorTemperature") {
-           //alexa, set the lights softer ==> {"deviceId":"xxx","action":"IncreaseColorTemperature"}
-        }
-        else if(action == "SetColorTemperature") {
-           //alexa, set the lights softer ==> {"deviceId":"xxx","action":"SetColorTemperature","value":2200}
+         else if(action == "SelectInput") { 
+          // alexa, change the input to hdmi ==> {"deviceId":"xx","action":"","value":{"input":"HDMI"}}
         }
       }
       break;
@@ -168,6 +176,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 // eg: setPowerStateOnServer("deviceid", "ON")
 
 // Call ONLY If status changed. DO NOT CALL THIS IN loop() and overload the server. 
+
 void setPowerStateOnServer(String deviceId, String value) {
 #if ARDUINOJSON_VERSION_MAJOR == 5
   DynamicJsonBuffer jsonBuffer;
@@ -176,6 +185,7 @@ void setPowerStateOnServer(String deviceId, String value) {
 #if ARDUINOJSON_VERSION_MAJOR == 6        
   DynamicJsonDocument root(1024);
 #endif        
+
   root["deviceId"] = deviceId;
   root["action"] = "setPowerState";
   root["value"] = value;
@@ -186,6 +196,7 @@ void setPowerStateOnServer(String deviceId, String value) {
 #if ARDUINOJSON_VERSION_MAJOR == 6        
   serializeJson(root, databuf);
 #endif  
-  
   webSocket.sendTXT(databuf);
 }
+
+ 
